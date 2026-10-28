@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-heading: 'Cinzel', serif;
+    --font-display: 'Syne', sans-serif;
+    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'Space Grotesk', monospace;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #050814;
+    color: #e2e8f0;
+  }
+
+  h1, h2, h3, .font-heading {
+    font-family: var(--font-display);
+  }
+
+  .font-cinzel {
+    font-family: var(--font-heading);
+  }
+
+  .font-mono-tag {
+    font-family: var(--font-mono);
+  }
+}
+
+/* Custom metallic gradient text & borders */
+.text-gold-gradient {
+  background: linear-gradient(135deg, #FFF4D0 0%, #F5D061 30%, #E5A93C 70%, #9E6B18 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-silver-gradient {
+  background: linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 40%, #94A3B8 80%, #64748B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-neon-red {
+  color: #ff3366;
+  text-shadow: 0 0 20px rgba(255, 51, 102, 0.4);
+}
+
+.text-neon-blue {
+  color: #38bdf8;
+  text-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+}
+
+.border-gold-glow {
+  border-color: rgba(245, 208, 97, 0.3);
+  box-shadow: 0 0 25px -5px rgba(245, 208, 97, 0.15), inset 0 0 15px -5px rgba(245, 208, 97, 0.1);
+}
+
+.border-silver-glow {
+  border-color: rgba(226, 232, 240, 0.25);
+  box-shadow: 0 0 25px -5px rgba(148, 163, 184, 0.15);
+}
+
+/* Glassmorphism */
+.glass-panel {
+  background: rgba(11, 17, 34, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-panel-elevated {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(245, 208, 97, 0.2);
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.7);
+}
+
+/* Shimmer metallic shine animation */
+@keyframes metallicShine {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background-size: 200% auto;
+  animation: metallicShine 4s linear infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #060a17;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+  border: 1px solid rgba(245, 208, 97, 0.2);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
