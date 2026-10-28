@@ -3,6 +3,12 @@ import { Play, Clock, Sparkles, Trash2, Maximize2, Tag } from 'lucide-react';
 
 export default function VideoCard({ item, onPlay, onDelete }) {
   const isVertical = item.aspectRatio === '9:16';
+  const hasActualVideo = item.videoUrl && (
+    item.videoUrl.startsWith('data:video') || 
+    item.videoUrl.startsWith('blob:') || 
+    item.videoUrl.endsWith('.mp4') ||
+    item.videoUrl.endsWith('.webm')
+  );
 
   return (
     <div className={`group relative rounded-2xl overflow-hidden glass-panel border transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl flex flex-col ${
@@ -18,13 +24,14 @@ export default function VideoCard({ item, onPlay, onDelete }) {
           isVertical ? 'aspect-[9/14]' : 'aspect-video'
         }`}
       >
-        {item.videoUrl && item.videoUrl.startsWith('data:video') ? (
+        {hasActualVideo ? (
           <video
-            src={item.videoUrl}
+            src={`${item.videoUrl}#t=0.001`}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
             muted
             loop
             playsInline
+            preload="metadata"
             onMouseEnter={(e) => e.target.play().catch(() => {})}
             onMouseLeave={(e) => {
               e.target.pause();
@@ -43,17 +50,17 @@ export default function VideoCard({ item, onPlay, onDelete }) {
         {/* Ambient Dark Scrim */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/30 pointer-events-none" />
 
-        {/* Play Icon Overlay */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-14 h-14 rounded-full bg-black/60 backdrop-blur-md border border-amber-400/50 flex items-center justify-center text-amber-400 shadow-xl group-hover:scale-110 group-hover:bg-amber-400 group-hover:text-slate-950 transition-all duration-300">
+        {/* Play Icon Overlay - smoothly fades when hovered over video */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-black/60 backdrop-blur-md border border-amber-400/50 flex items-center justify-center text-amber-400 shadow-xl group-hover:scale-110 group-hover:opacity-0 transition-all duration-300">
             <Play className="w-6 h-6 fill-current ml-0.5" />
           </div>
         </div>
 
         {/* Top Badges */}
-        <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
+        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
           <div className="flex items-center gap-1.5">
-            <span className="px-2.5 py-1 rounded-md text-[11px] font-mono-tag font-bold tracking-wider bg-black/75 backdrop-blur-md text-amber-300 border border-amber-400/30">
+            <span className="px-2 py-0.5 rounded text-[10px] font-mono-tag font-bold tracking-wider bg-black/75 backdrop-blur-md text-amber-300 border border-amber-400/30">
               {item.aspectRatio}
             </span>
             {item.isCustom && (
@@ -63,25 +70,25 @@ export default function VideoCard({ item, onPlay, onDelete }) {
             )}
           </div>
 
-          <div className="flex items-center gap-1 bg-black/75 backdrop-blur-md px-2 py-1 rounded-md border border-white/10 text-white font-mono-tag text-xs">
+          <div className="flex items-center gap-1 bg-black/75 backdrop-blur-md px-2 py-0.5 rounded border border-white/10 text-white font-mono-tag text-[11px]">
             <Clock className="w-3 h-3 text-slate-400" />
             <span>{item.duration || '01:00'}</span>
           </div>
         </div>
 
         {/* Bottom Quick Info inside image */}
-        <div className="absolute bottom-3 left-3 right-3 pointer-events-none">
-          <span className="text-[11px] font-mono-tag text-rose-300 tracking-wider uppercase font-semibold">
+        <div className="absolute bottom-2.5 left-3 right-3 pointer-events-none">
+          <span className="text-[10px] sm:text-[11px] font-mono-tag text-rose-300 tracking-wider uppercase font-semibold">
             {item.subCategory}
           </span>
-          <h3 className="text-base sm:text-lg font-bold text-white line-clamp-1 group-hover:text-amber-300 transition-colors">
+          <h3 className="text-sm sm:text-base font-bold text-white line-clamp-1 group-hover:text-amber-300 transition-colors">
             {item.title}
           </h3>
         </div>
       </div>
 
       {/* Card Body Details */}
-      <div className="p-4 flex-1 flex flex-col justify-between space-y-3 bg-[#080d1f]/60">
+      <div className="p-3.5 sm:p-4 flex-1 flex flex-col justify-between space-y-3 bg-[#080d1f]/60">
         <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed">
           {item.description}
         </p>
@@ -93,7 +100,7 @@ export default function VideoCard({ item, onPlay, onDelete }) {
             <span className="font-mono-tag text-amber-400/90">{item.year || '2026'}</span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1">
             {(item.software || ['Premiere Pro', 'DaVinci']).map((sw, i) => (
               <span 
                 key={i}
@@ -112,7 +119,7 @@ export default function VideoCard({ item, onPlay, onDelete }) {
             className="flex items-center gap-1.5 text-xs font-semibold text-amber-300 hover:text-amber-200 transition cursor-pointer"
           >
             <Maximize2 className="w-3.5 h-3.5" />
-            <span>Watch Full Cut</span>
+            <span>Watch Cut</span>
           </button>
 
           {item.isCustom && onDelete && (

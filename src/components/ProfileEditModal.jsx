@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { X, Camera, RotateCcw, Check, UserCheck, Sparkles, Link as LinkIcon } from 'lucide-react';
-import { readFileAsDataURL } from '../utils/db';
-import { INITIAL_PROFILE } from '../data/defaultPortfolio';
+import { X, Camera, RotateCcw, Check, UserCheck, Sparkles, AlertCircle } from 'lucide-react';
+import { resizeImageFile } from '../utils/mediaUtils';
 
 export default function ProfileEditModal({ isOpen, onClose, profile, onSaveProfile }) {
   const [name, setName] = useState(profile.name || 'Neon Creator');
@@ -14,6 +13,8 @@ export default function ProfileEditModal({ isOpen, onClose, profile, onSaveProfi
   const [email, setEmail] = useState(profile.socials?.email || 'creator@neonstudio.design');
   const [instagram, setInstagram] = useState(profile.socials?.instagram || '');
   const [youtube, setYoutube] = useState(profile.socials?.youtube || '');
+  const [isProcessingAvatar, setIsProcessingAvatar] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const fileInputRef = useRef(null);
 
@@ -22,11 +23,20 @@ export default function ProfileEditModal({ isOpen, onClose, profile, onSaveProfi
   const handleAvatarFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    setIsProcessingAvatar(true);
+    setErrorMsg('');
+
     try {
-      const dataUrl = await readFileAsDataURL(file);
-      setAvatarUrl(dataUrl);
+      // Downsample/compress camera photo to 512x512 JPEG (~50KB)
+      // This prevents LocalStorage 5MB QuotaExceededError completely
+      const optimizedDataUrl = await resizeImageFile(file, 512, 512, 0.88);
+      setAvatarUrl(optimizedDataUrl);
     } catch (err) {
-      console.error('Failed to read avatar:', err);
+      console.error('Failed to optimize avatar photo:', err);
+      setErrorMsg('Failed to process avatar photo. Please try a standard JPG/PNG.');
+    } finally {
+      setIsProcessingAvatar(false);
     }
   };
 
@@ -36,6 +46,11 @@ export default function ProfileEditModal({ isOpen, onClose, profile, onSaveProfi
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!name.trim()) {
+      setErrorMsg('Creator name cannot be empty.');
+      return;
+    }
+
     const updated = {
       ...profile,
       name: name.trim(),
@@ -60,7 +75,7 @@ export default function ProfileEditModal({ isOpen, onClose, profile, onSaveProfi
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-xl animate-fadeIn">
       <div className="absolute inset-0" onClick={onClose} />
 
-      <div className="relative w-full max-w-xl bg-[#090e21] border border-amber-500/40 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[92vh]">
+      <div className="relative w-full max-w-xl bg-[#090e21] border border-amber-500/40 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[94vh]">
         
         {/* Header */}
         <div className="px-6 py-4 bg-black/60 border-b border-white/10 flex items-center justify-between">
@@ -88,6 +103,12 @@ export default function ProfileEditModal({ isOpen, onClose, profile, onSaveProfi
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-5 flex-1">
+          {errorMsg && (
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
           
           {/* Avatar Swap Section */}
           <div className="flex flex-col sm:flex-row items-center gap-4 bg-black/40 p-4 rounded-2xl border border-white/10">
@@ -101,11 +122,16 @@ export default function ProfileEditModal({ isOpen, onClose, profile, onSaveProfi
                   e.target.src = '/assets/neon-creator.png';
                 }}
               />
+              {isProcessingAvatar && (
+                <div className="absolute inset-0 bg-black/75 flex items-center justify-center text-amber-300 text-xs">
+                  <div className="w-4 h-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
             </div>
 
             <div className="space-y-2 text-center sm:text-left flex-1">
               <h4 className="text-xs font-mono-tag uppercase tracking-wider text-slate-300">
-                Profile Photo (Current: Neon Creator)
+                Profile Photo (Optimized for Mobile &amp; Retina)
               </h4>
               <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-start">
                 <input
@@ -118,10 +144,11 @@ export default function ProfileEditModal({ isOpen, onClose, profile, onSaveProfi
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/40 text-amber-300 text-xs font-semibold cursor-pointer"
+                  disabled={isProcessingAvatar}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/40 text-amber-300 text-xs font-semibold cursor-pointer disabled:opacity-50"
                 >
                   <Camera className="w-3.5 h-3.5" />
-                  <span>Upload New Photo</span>
+                  <span>{isProcessingAvatar ? 'Optimizing...' : 'Upload Photo'}</span>
                 </button>
 
                 <button

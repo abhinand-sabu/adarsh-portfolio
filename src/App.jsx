@@ -22,8 +22,15 @@ import {
 import { Film, Image as ImageIcon, Upload, Sparkles, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function App() {
-  // Navigation & Filter states
-  const [activeCategory, setActiveCategory] = useState('all'); // 'all' | 'video' | 'poster'
+  // Navigation & Hash-routed state
+  const [activeCategory, setActiveCategory] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
+      if (hash === 'video' || hash === 'poster') return hash;
+    }
+    return 'all';
+  });
+  
   const [selectedSubCategory, setSelectedSubCategory] = useState('All');
   const [selectedAspect, setSelectedAspect] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,6 +54,32 @@ export default function App() {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4000);
   };
+
+  // Synchronize hash with activeCategory for direct linking (e.g. #video, #poster)
+  const setCategoryAndHash = (cat) => {
+    setActiveCategory(cat);
+    if (typeof window !== 'undefined') {
+      if (cat === 'all') {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+      } else {
+        history.replaceState(null, '', `#${cat}`);
+      }
+    }
+  };
+
+  // Listen to browser Back/Forward hashchange events
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
+      if (hash === 'video' || hash === 'poster') {
+        setActiveCategory(hash);
+      } else {
+        setActiveCategory('all');
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   // Load portfolio items from DB
   useEffect(() => {
@@ -143,13 +176,13 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#050814] text-slate-100 selection:bg-rose-600 selection:text-white">
-      {/* LAN Network Testing info bar */}
+      {/* LAN Network Testing info bar with QR Code */}
       <NetworkBanner />
 
       {/* Main Top Navigation */}
       <Navbar
         activeCategory={activeCategory}
-        setActiveCategory={setActiveCategory}
+        setActiveCategory={setCategoryAndHash}
         onOpenUpload={() => openUploadWithCategory(activeCategory === 'poster' ? 'poster' : 'video')}
         onOpenProfileEdit={() => setIsProfileEditOpen(true)}
         profile={profile}
@@ -158,7 +191,7 @@ export default function App() {
       {/* Hero Section with Dual Focus & Profile Avatar */}
       <Hero
         profile={profile}
-        setActiveCategory={setActiveCategory}
+        setActiveCategory={setCategoryAndHash}
         onOpenUpload={() => openUploadWithCategory(activeCategory === 'poster' ? 'poster' : 'video')}
         onOpenProfileEdit={() => setIsProfileEditOpen(true)}
       />
@@ -172,12 +205,12 @@ export default function App() {
       )}
 
       {/* Main Portfolio Showcase Section */}
-      <main id="portfolio-section" className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main id="portfolio-section" className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         
         {/* Category Navigation Bar */}
         <CategoryNav
           activeCategory={activeCategory}
-          setActiveCategory={setActiveCategory}
+          setActiveCategory={setCategoryAndHash}
           counts={counts}
         />
 
@@ -185,18 +218,18 @@ export default function App() {
         <div className="mt-8 mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className={`text-xs font-mono-tag px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+              <span className={`text-[11px] sm:text-xs font-mono-tag px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
                 activeCategory === 'video'
                   ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
                   : activeCategory === 'poster'
                   ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
                   : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
               }`}>
-                {activeCategory === 'video' ? 'Video Portfolio' : activeCategory === 'poster' ? 'Poster Design Gallery' : 'Featured Showcase'}
+                {activeCategory === 'video' ? 'Dedicated Video Editing Suite' : activeCategory === 'poster' ? 'Dedicated Poster Design Gallery' : 'Featured Dual Showcase'}
               </span>
             </div>
 
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white mt-1">
               {activeCategory === 'video' && 'Cinematic Video Cuts & Viral Reels'}
               {activeCategory === 'poster' && 'High-Res Key Art & Poster Designs'}
               {activeCategory === 'all' && 'Curated Visual & Editing Works'}
@@ -206,10 +239,10 @@ export default function App() {
           {/* Quick upload button for this specific section */}
           <button
             onClick={() => openUploadWithCategory(activeCategory === 'poster' ? 'poster' : 'video')}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-slate-900 bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-110 shadow-lg shadow-amber-500/20 transition cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-slate-950 bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-110 shadow-lg shadow-amber-500/20 transition cursor-pointer"
           >
             <Upload className="w-3.5 h-3.5" />
-            <span>Upload {activeCategory === 'poster' ? 'Poster' : activeCategory === 'video' ? 'Video' : 'Work'}</span>
+            <span>Upload {activeCategory === 'poster' ? 'Poster' : activeCategory === 'video' ? 'Video Cut' : 'Creation'}</span>
           </button>
         </div>
 
@@ -243,13 +276,13 @@ export default function App() {
                 setSelectedAspect('all');
                 setSearchQuery('');
               }}
-              className="mt-4 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 transition"
+              className="mt-4 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 transition cursor-pointer"
             >
               Reset Filters
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 pt-4">
             {filteredItems.map((item) => (
               item.type === 'video' ? (
                 <VideoCard
@@ -304,7 +337,7 @@ export default function App() {
       {/* Footer */}
       <Footer
         profile={profile}
-        setActiveCategory={setActiveCategory}
+        setActiveCategory={setCategoryAndHash}
       />
     </div>
   );

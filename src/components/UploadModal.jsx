@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, Film, Image as ImageIcon, Sparkles, Check, AlertCircle } from 'lucide-react';
+import { X, Upload, Film, Image as ImageIcon, Sparkles, Check, AlertCircle, Loader2 } from 'lucide-react';
 import { readFileAsDataURL } from '../utils/db';
+import { captureVideoThumbnail, resizeImageFile } from '../utils/mediaUtils';
 
 export default function UploadModal({ isOpen, onClose, onUploadSuccess, defaultCategory = 'video' }) {
   const [category, setCategory] = useState(defaultCategory === 'poster' ? 'Poster Designing' : 'Video Editing');
@@ -13,9 +14,13 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess, defaultC
   const [dimensions, setDimensions] = useState('27" x 40"');
   const [description, setDescription] = useState('');
   const [selectedSoftware, setSelectedSoftware] = useState(['Premiere Pro', 'DaVinci Resolve']);
+  
+  // Media states
   const [fileDataUrl, setFileDataUrl] = useState(null);
+  const [thumbnailDataUrl, setThumbnailDataUrl] = useState(null);
   const [fileName, setFileName] = useState('');
   const [fileType, setFileType] = useState('');
+  const [isProcessingMedia, setIsProcessingMedia] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -49,13 +54,33 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess, defaultC
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Check file size (< 45MB recommended for browser storage)
+    const sizeInMb = file.size / (1024 * 1024);
+    if (sizeInMb > 45) {
+      setErrorMsg(`File size is ${sizeInMb.toFixed(1)}MB. For browser storage and mobile testing, please upload media under 45MB.`);
+      return;
+    }
+
     setErrorMsg('');
     setFileName(file.name);
     setFileType(file.type);
+    setIsProcessingMedia(true);
 
     try {
       const dataUrl = await readFileAsDataURL(file);
       setFileDataUrl(dataUrl);
+
+      // If it's a video file, generate a real frame thumbnail
+      if (file.type.startsWith('video/')) {
+        const videoThumb = await captureVideoThumbnail(file, 0.5);
+        setThumbnailDataUrl(videoThumb || dataUrl);
+      } else if (file.type.startsWith('image/')) {
+        // If it's an image, create a fast loading thumbnail
+        const imgThumb = await resizeImageFile(file, 800, 1100, 0.85);
+        setThumbnailDataUrl(imgThumb);
+      } else {
+        setThumbnailDataUrl(dataUrl);
+      }
 
       // Auto-populate title if empty
       if (!title) {
@@ -64,7 +89,9 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess, defaultC
       }
     } catch (err) {
       console.error('File read error:', err);
-      setErrorMsg('Failed to read the selected file. Please try another.');
+      setErrorMsg('Failed to process the selected media file. Please try another file.');
+    } finally {
+      setIsProcessingMedia(false);
     }
   };
 
@@ -104,12 +131,12 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess, defaultC
         dpi: !isVid ? '300 DPI High-Res' : undefined,
         resolution: isVid ? (aspectRatio === '9:16' ? '4K Vertical' : '4K UHD') : undefined,
         software: selectedSoftware,
-        client: client.trim() || 'Custom Showcase',
+        client: client.trim() || 'Custom Commission',
         year: year || '2026',
-        description: description.trim() || `Showcase ${isVid ? 'video project' : 'poster art'} by creator.`,
-        thumbnailUrl: fileDataUrl,
-        videoUrl: isVid ? fileDataUrl : null,
-        imageUrl: !isVid ? fileDataUrl : null,
+        description: description.trim() || `Showcase ${isVid ? 'video cut' : 'poster artwork'} created by creator.`,
+        thumbnailUrl: thumbnailDataUrl || fileDataUrl,
+        videoUrl: isVid && fileType.startsWith('video/') ? fileDataUrl : null,
+        imageUrl: !isVid ? fileDataUrl : (fileType.startsWith('image/') ? fileDataUrl : null),
         isCustom: true,
         createdAt: new Date().toISOString(),
         accent: isVid ? 'gold' : 'silver',
@@ -119,7 +146,7 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess, defaultC
       onClose();
     } catch (err) {
       console.error('Save failed:', err);
-      setErrorMsg('Failed to save to local portfolio storage.');
+      setErrorMsg('Failed to save to portfolio storage. If file is large, try a slightly smaller cut.');
     } finally {
       setIsSubmitting(false);
     }
@@ -129,20 +156,20 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess, defaultC
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-xl animate-fadeIn">
       <div className="absolute inset-0" onClick={onClose} />
 
-      <div className="relative w-full max-w-2xl bg-[#090e21] border border-amber-500/40 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[92vh]">
+      <div className="relative w-full max-w-2xl bg-[#090e21] border border-amber-500/40 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[94vh]">
         
         {/* Header */}
-        <div className="px-6 py-4 bg-black/60 border-b border-white/10 flex items-center justify-between">
+        <div className="px-5 sm:px-6 py-4 bg-black/60 border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-amber-400 text-slate-950 font-bold">
               <Upload className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white font-cinzel">
+              <h2 className="text-base sm:text-lg font-bold text-white font-cinzel">
                 Upload Showcase Media
               </h2>
               <p className="text-xs text-amber-300">
-                Directly showcase new work in your portfolio
+                Directly showcase new cuts, reels, or key art in your portfolio
               </p>
             </div>
           </div>
@@ -156,7 +183,7 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess, defaultC
         </div>
 
         {/* Body form */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-5 flex-1">
+        <form onSubmit={handleSubmit} className="p-5 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5 flex-1">
           {errorMsg && (
             <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -173,7 +200,7 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess, defaultC
               <button
                 type="button"
                 onClick={() => handleCategoryChange('Video Editing')}
-                className={`flex items-center justify-center gap-2.5 py-3 rounded-xl text-xs sm:text-sm font-semibold border transition cursor-pointer ${
+                className={`flex items-center justify-center gap-2.5 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-semibold border transition cursor-pointer ${
                   category === 'Video Editing'
                     ? 'bg-gradient-to-r from-rose-600 to-rose-700 border-rose-400 text-white shadow-lg shadow-rose-950/40'
                     : 'bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-800'
@@ -186,7 +213,7 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess, defaultC
               <button
                 type="button"
                 onClick={() => handleCategoryChange('Poster Designing')}
-                className={`flex items-center justify-center gap-2.5 py-3 rounded-xl text-xs sm:text-sm font-semibold border transition cursor-pointer ${
+                className={`flex items-center justify-center gap-2.5 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-semibold border transition cursor-pointer ${
                   category === 'Poster Designing'
                     ? 'bg-gradient-to-r from-sky-600 to-sky-700 border-sky-400 text-white shadow-lg shadow-sky-950/40'
                     : 'bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-800'
@@ -201,12 +228,12 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess, defaultC
           {/* 2. Drag & Drop File Upload Zone */}
           <div className="space-y-1.5">
             <label className="text-xs font-mono-tag uppercase tracking-wider text-slate-400">
-              Media File ({isVideo ? 'Video (MP4, WEBM, MOV) or Thumbnail' : 'Image (PNG, JPG, WEBP, SVG)'})
+              Media File ({isVideo ? 'Video MP4/WEBM or Keyframe Graphic' : 'High-Res Poster PNG/JPG/SVG'})
             </label>
             
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="group relative border-2 border-dashed border-amber-500/30 hover:border-amber-400 rounded-2xl p-5 text-center bg-black/40 hover:bg-black/60 transition cursor-pointer flex flex-col items-center justify-center min-h-[140px]"
+              className="group relative border-2 border-dashed border-amber-500/30 hover:border-amber-400 rounded-2xl p-4 sm:p-5 text-center bg-black/40 hover:bg-black/60 transition cursor-pointer flex flex-col items-center justify-center min-h-[130px]"
             >
               <input
                 ref={fileInputRef}
@@ -216,38 +243,43 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess, defaultC
                 className="hidden"
               />
 
-              {fileDataUrl ? (
+              {isProcessingMedia ? (
+                <div className="flex flex-col items-center space-y-2 py-4">
+                  <Loader2 className="w-7 h-7 text-amber-400 animate-spin" />
+                  <span className="text-xs font-mono-tag text-slate-300">Processing media &amp; capturing thumbnail...</span>
+                </div>
+              ) : fileDataUrl ? (
                 <div className="flex flex-col items-center space-y-2">
                   {fileType.startsWith('video') ? (
                     <video
                       src={fileDataUrl}
-                      className="max-h-36 rounded-lg shadow-lg border border-white/20"
+                      className="max-h-32 rounded-lg shadow-lg border border-white/20"
                       muted
                       controls
                     />
                   ) : (
                     <img
-                      src={fileDataUrl}
+                      src={thumbnailDataUrl || fileDataUrl}
                       alt="Preview"
-                      className="max-h-36 rounded-lg object-contain shadow-lg border border-white/20"
+                      className="max-h-32 rounded-lg object-contain shadow-lg border border-white/20"
                     />
                   )}
                   <span className="text-xs font-mono-tag text-emerald-400 flex items-center gap-1">
                     <Check className="w-3.5 h-3.5" />
-                    {fileName} (Click to replace)
+                    {fileName} (Click to change file)
                   </span>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <div className="w-12 h-12 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-400 mx-auto flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <div className="w-11 h-11 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-400 mx-auto flex items-center justify-center group-hover:scale-110 transition-transform">
                     <Upload className="w-5 h-5" />
                   </div>
                   <div>
                     <span className="text-xs sm:text-sm font-semibold text-slate-200">
-                      Click to browse or drop file here
+                      Click to browse or drop media file here
                     </span>
                     <p className="text-[11px] text-slate-500 mt-0.5">
-                      {isVideo ? 'Supports high-res reels, mp4, webm' : 'Supports high-res 300dpi posters, png, jpg'}
+                      {isVideo ? 'Supports 4K cuts, 9:16 reels, MP4, WEBM (auto-extracts thumbnail)' : 'Supports 300 DPI one-sheets, PNG, JPG, WEBP'}
                     </p>
                   </div>
                 </div>
@@ -256,7 +288,7 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess, defaultC
           </div>
 
           {/* 3. Title & SubCategory */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-1">
               <label className="text-xs font-mono-tag uppercase tracking-wider text-slate-400">
                 Project Title *
@@ -288,7 +320,7 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess, defaultC
           </div>
 
           {/* 4. Aspect Ratio & Meta */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <div className="space-y-1">
               <label className="text-xs font-mono-tag uppercase tracking-wider text-slate-400">
                 Aspect Ratio
@@ -300,8 +332,8 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess, defaultC
               >
                 {isVideo ? (
                   <>
-                    <option value="16:9">16:9 Landscape (Cinema/YouTube)</option>
-                    <option value="9:16">9:16 Vertical (Reel/TikTok/Shorts)</option>
+                    <option value="16:9">16:9 Cinema Landscape</option>
+                    <option value="9:16">9:16 Vertical Reel (Instagram/TikTok)</option>
                     <option value="4:5">4:5 Feed Format</option>
                   </>
                 ) : (
@@ -322,7 +354,7 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess, defaultC
                 type="text"
                 value={client}
                 onChange={(e) => setClient(e.target.value)}
-                placeholder="e.g. Sony Music, Nike, Indie"
+                placeholder="e.g. Sony Music, Nike, Warner Bros"
                 className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400"
               />
             </div>
@@ -344,7 +376,7 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess, defaultC
           {/* 5. Software Stack Chips */}
           <div className="space-y-1.5">
             <label className="text-xs font-mono-tag uppercase tracking-wider text-slate-400">
-              Software Used
+              Software Stack
             </label>
             <div className="flex flex-wrap gap-2">
               {availableSoftware.map((sw) => {
@@ -373,11 +405,11 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess, defaultC
               Project Description &amp; Techniques
             </label>
             <textarea
-              rows={3}
+              rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe your creative concept, color grading, sound design, typography, or visual rhythm..."
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400"
+              className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400"
             />
           </div>
 
@@ -392,11 +424,11 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess, defaultC
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isProcessingMedia}
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-slate-950 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:brightness-110 shadow-lg shadow-amber-500/30 transition cursor-pointer disabled:opacity-50"
             >
               <Sparkles className="w-4 h-4" />
-              <span>{isSubmitting ? 'Publishing...' : 'Publish to Portfolio'}</span>
+              <span>{isSubmitting ? 'Publishing...' : 'Publish to Showcase'}</span>
             </button>
           </div>
         </form>
