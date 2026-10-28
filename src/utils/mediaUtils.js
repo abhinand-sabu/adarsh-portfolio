@@ -30,8 +30,7 @@ export async function copyTextToClipboard(text) {
     const successful = document.execCommand('copy');
     document.body.removeChild(textArea);
     return successful;
-  } catch (err) {
-    console.error('Clipboard copy failed:', err);
+  } catch {
     return false;
   }
 }
@@ -155,18 +154,27 @@ export function exportArtworkAsPng(dataUriOrUrl, fileName = 'artwork.png') {
       return;
     }
 
-    // If it is SVG, render to canvas at high resolution (1600x2200)
+    // If it is SVG or URL, render to canvas preserving authentic aspect ratio
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       try {
+        const naturalWidth = img.naturalWidth || img.width || 1200;
+        const naturalHeight = img.naturalHeight || img.height || 1600;
+
+        // Scale up to high-res (target ~2400px on the longest edge for crisp 300 DPI print export)
+        const longestEdge = Math.max(naturalWidth, naturalHeight);
+        const scale = Math.max(1, 2400 / longestEdge);
+        const targetWidth = Math.round(naturalWidth * scale);
+        const targetHeight = Math.round(naturalHeight * scale);
+
         const canvas = document.createElement('canvas');
-        canvas.width = 1600;
-        canvas.height = 2200;
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#050814';
+        ctx.fillStyle = '#07090e';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
 
         const pngUrl = canvas.toDataURL('image/png');
         const link = document.createElement('a');
@@ -174,8 +182,7 @@ export function exportArtworkAsPng(dataUriOrUrl, fileName = 'artwork.png') {
         link.download = fileName.endsWith('.png') ? fileName : `${fileName}.png`;
         link.click();
         resolve(true);
-      } catch (err) {
-        console.error('Canvas export failed, falling back to direct download:', err);
+      } catch {
         const link = document.createElement('a');
         link.href = dataUriOrUrl;
         link.download = fileName.endsWith('.svg') ? fileName : `${fileName.replace(/\.png$/, '')}.svg`;
@@ -218,3 +225,77 @@ export function formatTimecode(durationStr = '01:30', progress = 0) {
   const pad = (n) => String(n).padStart(2, '0');
   return `${pad(hrs)}:${pad(mins)}:${pad(secs)}:${pad(frames)}`;
 }
+
+/**
+ * Universal video URL parser supporting YouTube, Vimeo, Google Drive,
+ * and direct MP4/WebM files.
+ */
+export function parseVideoUrl(url) {
+  if (!url || typeof url !== 'string') return null;
+  const cleanUrl = url.trim();
+  if (!cleanUrl) return null;
+
+  // Direct video file or stream
+  if (
+    cleanUrl.startsWith('data:video') ||
+    cleanUrl.startsWith('blob:') ||
+    /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(cleanUrl) ||
+    cleanUrl.includes('/portfolio-media/videos/')
+  ) {
+    return {
+      platform: 'direct',
+      url: cleanUrl,
+      embedUrl: null,
+      defaultThumb: null,
+    };
+  }
+
+  // YouTube (standard, shorts, embed, shortlink)
+  const ytMatch = cleanUrl.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i);
+  if (ytMatch) {
+    const id = ytMatch[1];
+    return {
+      platform: 'youtube',
+      id,
+      embedUrl: `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`,
+      defaultThumb: `https://img.youtube.com/vi/${id}/hqdefault.jpg`,
+    };
+  }
+
+  // Vimeo
+  const vimeoMatch = cleanUrl.match(/(?:vimeo\.com\/(?:video\/)?)([0-9]+)/i);
+  if (vimeoMatch) {
+    const id = vimeoMatch[1];
+    return {
+      platform: 'vimeo',
+      id,
+      embedUrl: `https://player.vimeo.com/video/${id}?autoplay=1`,
+      defaultThumb: null,
+    };
+  }
+
+  // Google Drive preview embed (supports /file/d/ID, /open?id=ID, /uc?id=ID)
+  const driveMatch = cleanUrl.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)([a-zA-Z0-9_-]+)/i);
+  if (driveMatch) {
+    const id = driveMatch[1];
+    return {
+      platform: 'drive',
+      id,
+      embedUrl: `https://drive.google.com/file/d/${id}/preview`,
+      defaultThumb: null,
+    };
+  }
+
+  // Any other remote URL
+  if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')) {
+    return {
+      platform: 'external',
+      url: cleanUrl,
+      embedUrl: cleanUrl,
+      defaultThumb: null,
+    };
+  }
+
+  return null;
+}
+

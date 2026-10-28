@@ -1,179 +1,130 @@
-import React, { useState } from 'react';
-import { Film, Image as ImageIcon, Upload, Menu, X, Sparkles, UserCheck, Shield } from 'lucide-react';
+import React from 'react';
+import { Search, X, Upload, UserCheck, LogOut, Key } from 'lucide-react';
 
 export default function Navbar({ 
-  activeCategory, 
-  setActiveCategory, 
-  onOpenUpload, 
+  searchQuery, 
+  setSearchQuery, 
+  isAdmin = false,
+  onOpenUpload,
   onOpenProfileEdit,
-  profile 
+  onOpenChangePassword,
+  onExitAdmin,
+  totalResults = 0
 }) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const navItems = [
-    { id: 'all', label: 'All Works', icon: Sparkles },
-    { id: 'video', label: 'Video Editing', icon: Film },
-    { id: 'poster', label: 'Poster Designing', icon: ImageIcon },
-  ];
-
-  const handleSelectCategory = (id) => {
-    setActiveCategory(id);
-    setMobileMenuOpen(false);
-    const targetElement = document.getElementById('portfolio-section');
-    if (targetElement) {
-      targetElement.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+  const isSearching = Boolean(searchQuery && searchQuery.trim().length > 0);
 
   return (
-    <header className="sticky top-0 z-30 w-full glass-panel border-b border-white/10 transition-all duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+    <header className="sticky top-0 z-40 w-full bg-[#07090e]/90 backdrop-blur-2xl border-b border-white/[0.08] transition-all duration-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3 sm:gap-6">
         
-        {/* Brand / Logo */}
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-          <div className="relative w-11 h-11 rounded-xl p-[2px] bg-gradient-to-tr from-amber-400 via-rose-600 to-sky-400 shadow-lg shadow-rose-950/40">
-            <div className="w-full h-full rounded-[10px] bg-[#050814] overflow-hidden flex items-center justify-center">
-              <img 
-                src={profile.avatarUrl} 
-                alt="Profile Avatar" 
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = '/assets/neon-creator.png';
-                }}
-              />
+        {/* Brand Monogram / Name */}
+        <div 
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
+        >
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#dfba73]/30 via-white/5 to-transparent p-[1px] shadow-sm">
+            <div className="w-full h-full rounded-[7px] bg-[#0a0d14] flex items-center justify-center border border-white/5">
+              <span className="font-cinzel text-xs font-bold text-[#dfba73] group-hover:scale-110 transition-transform">
+                A
+              </span>
             </div>
-            <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-[#050814]" title="Available for freelance" />
           </div>
+          <span className="font-cinzel text-sm sm:text-base font-bold tracking-wider text-slate-100 group-hover:text-[#dfba73] transition-colors hidden sm:inline">
+            Adarsh A L
+          </span>
+        </div>
 
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-heading text-lg sm:text-xl font-bold tracking-wider text-slate-100">
-                {profile.name}
-              </span>
-              <span className="text-[10px] font-mono-tag px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30">
-                PRO
-              </span>
+        {/* Minimalist Centered Search Bar */}
+        <div className="flex-1 max-w-xl mx-auto">
+          <div className="relative flex items-center">
+            <div className="absolute left-3.5 pointer-events-none text-slate-500 flex items-center">
+              <Search className="w-4 h-4" />
             </div>
-            <p className="text-[11px] sm:text-xs text-slate-400 tracking-wide flex items-center gap-1.5">
-              <span className="text-rose-400 font-medium">Video Editor</span>
-              <span className="text-slate-600">•</span>
-              <span className="text-sky-400 font-medium">Graphic Designer</span>
-            </p>
+
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') setSearchQuery('');
+              }}
+              placeholder="Search videos, graphics, software, tags..."
+              className="w-full pl-10 pr-10 py-2 rounded-full bg-[#0a0d14] border border-white/10 hover:border-white/20 focus:border-[#dfba73]/60 focus:bg-[#0c1018] text-xs sm:text-sm text-slate-100 placeholder-slate-500 font-mono-tag focus:outline-none transition-all duration-200 shadow-inner"
+            />
+
+            {/* Clear Button or Result Badge */}
+            <div className="absolute right-3 flex items-center gap-1.5">
+              {isSearching && (
+                <>
+                  <span className="text-[10px] font-mono-tag px-2 py-0.5 rounded-full bg-white/[0.06] text-[#dfba73] hidden md:inline">
+                    {totalResults} {totalResults === 1 ? 'match' : 'matches'}
+                  </span>
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="p-1 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition cursor-pointer"
+                    title="Clear search"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Desktop Navigation Category Tabs */}
-        <nav className="hidden md:flex items-center gap-1 p-1.5 rounded-full bg-slate-900/80 border border-white/10 shadow-inner">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeCategory === item.id;
-            return (
+        {/* Top-Right Area: Only Admin Management Controls when in Admin Mode */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {isAdmin ? (
+            <>
+              <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-400/10 border border-amber-400/25 text-amber-300 text-[10px] font-mono-tag">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                <span>Admin</span>
+              </div>
+
               <button
-                key={item.id}
-                onClick={() => handleSelectCategory(item.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 cursor-pointer ${
-                  isActive
-                    ? 'bg-gradient-to-r from-amber-500/90 to-amber-600 text-slate-950 shadow-md shadow-amber-500/20 font-bold'
-                    : 'text-slate-300 hover:text-white hover:bg-white/5'
-                }`}
+                onClick={onOpenProfileEdit}
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 transition cursor-pointer"
+                title="Edit Bio & Profile"
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-slate-950' : 'text-slate-400'}`} />
-                <span>{item.label}</span>
+                <UserCheck className="w-3.5 h-3.5 text-[#dfba73]" />
+                <span className="text-[11px]">Profile</span>
               </button>
-            );
-          })}
-        </nav>
 
-        {/* Action Buttons: Upload & Edit Profile */}
-        <div className="hidden sm:flex items-center gap-3">
-          <button
-            onClick={onOpenProfileEdit}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-slate-500 transition cursor-pointer"
-            title="Edit bio or change avatar photo"
-          >
-            <UserCheck className="w-3.5 h-3.5 text-sky-400" />
-            <span>Edit Profile</span>
-          </button>
+              <button
+                onClick={onOpenChangePassword}
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 transition cursor-pointer"
+                title="Change Admin Password"
+              >
+                <Key className="w-3.5 h-3.5 text-[#dfba73]" />
+                <span className="text-[11px]">Password</span>
+              </button>
 
-          <button
-            onClick={onOpenUpload}
-            className="group relative flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-slate-900 bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 shadow-lg shadow-amber-500/20 transition-all duration-200 cursor-pointer active:scale-95"
-          >
-            <Upload className="w-3.5 h-3.5 text-slate-950 group-hover:-translate-y-0.5 transition-transform" />
-            <span>Upload Work</span>
-            <span className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-amber-400 to-rose-500 opacity-20 blur group-hover:opacity-40 transition" />
-          </button>
+              <button
+                onClick={onOpenUpload}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-black bg-[#c5a059] hover:bg-[#dfba73] shadow transition cursor-pointer active:scale-95"
+                title="Upload New Work"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>Upload</span>
+              </button>
+
+              <button
+                onClick={onExitAdmin}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-950/20 border border-transparent hover:border-rose-900/40 transition cursor-pointer"
+                title="Exit Admin Mode"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </>
+          ) : (
+            /* Public View: Minimalist subtle placeholder or balance element */
+            <div className="w-8 h-8 flex items-center justify-center opacity-0 pointer-events-none sm:block">
+              <span className="w-1" />
+            </div>
+          )}
         </div>
 
-        {/* Mobile Hamburger Toggle */}
-        <div className="flex sm:hidden items-center gap-2">
-          <button
-            onClick={onOpenUpload}
-            className="p-2 rounded-lg bg-amber-400 text-slate-950 shadow-md cursor-pointer"
-            title="Upload Media"
-          >
-            <Upload className="w-4 h-4" />
-          </button>
-          
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2.5 rounded-lg bg-slate-800/80 border border-slate-700 text-slate-200 hover:text-white cursor-pointer"
-            aria-label="Toggle navigation menu"
-          >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-        </div>
       </div>
-
-      {/* Mobile Drawer */}
-      {mobileMenuOpen && (
-        <div className="sm:hidden border-t border-white/10 bg-[#090e21] px-4 pt-3 pb-6 space-y-3 animate-fadeIn">
-          <div className="grid grid-cols-1 gap-2">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeCategory === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleSelectCategory(item.id)}
-                  className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-medium transition cursor-pointer ${
-                    isActive
-                      ? 'bg-amber-400 text-slate-950 font-bold'
-                      : 'text-slate-200 hover:bg-slate-800/80'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="pt-2 border-t border-slate-800 grid grid-cols-2 gap-2">
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onOpenProfileEdit();
-              }}
-              className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-slate-800 text-slate-200 text-xs font-semibold border border-slate-700"
-            >
-              <UserCheck className="w-3.5 h-3.5 text-sky-400" />
-              <span>Edit Profile</span>
-            </button>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onOpenUpload();
-              }}
-              className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-amber-400 text-slate-950 text-xs font-bold shadow"
-            >
-              <Upload className="w-3.5 h-3.5" />
-              <span>Upload Work</span>
-            </button>
-          </div>
-        </div>
-      )}
     </header>
   );
 }

@@ -1,108 +1,199 @@
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    --font-heading: 'Cinzel', serif;
-    --font-display: 'Syne', sans-serif;
-    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-mono: 'Space Grotesk', monospace;
-  }
+@theme {
+  --font-heading: 'Cinzel', serif;
+  --font-display: 'Syne', sans-serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Space Grotesk', monospace;
 
+  --color-obsidian-950: #040508;
+  --color-obsidian-900: #07090e;
+  --color-obsidian-850: #0a0d14;
+  --color-obsidian-800: #0e121a;
+
+  --color-oxblood-950: #140407;
+  --color-oxblood-900: #22080d;
+  --color-oxblood-800: #3b0a11;
+  --color-oxblood-700: #54121c;
+
+  --color-sapphire-950: #040812;
+  --color-sapphire-900: #081224;
+  --color-sapphire-800: #0e1e38;
+
+  --color-champagne-100: #fdfbf7;
+  --color-champagne-200: #f5ede0;
+  --color-champagne-300: #dfba73;
+  --color-champagne-400: #c5a059;
+  --color-champagne-500: #9e7d3b;
+
+  --color-platinum-100: #ffffff;
+  --color-platinum-200: #f8fafc;
+  --color-platinum-300: #e2e8f0;
+  --color-platinum-400: #cbd5e1;
+  --color-platinum-500: #94a3b8;
+}
+
+@layer base {
   body {
     font-family: var(--font-sans);
-    background-color: #050814;
+    background-color: #07090e;
     color: #e2e8f0;
-  }
-
-  h1, h2, h3, .font-heading {
-    font-family: var(--font-display);
   }
 
   .font-cinzel {
     font-family: var(--font-heading);
   }
 
+  .font-syne {
+    font-family: var(--font-display);
+  }
+
   .font-mono-tag {
     font-family: var(--font-mono);
   }
+
+  /* Comprehensive Media Download & Drag Protection */
+  img, video, canvas, [data-protected-media] {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+    -webkit-touch-callout: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
 }
 
-/* Custom metallic gradient text & borders */
+/* Luxury brushed champagne gold and titanium silver gradients */
 .text-gold-gradient {
-  background: linear-gradient(135deg, #FFF4D0 0%, #F5D061 30%, #E5A93C 70%, #9E6B18 100%);
+  background: linear-gradient(135deg, #fdfbf7 0%, #dfba73 35%, #c5a059 75%, #9e7d3b 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .text-silver-gradient {
-  background: linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 40%, #94A3B8 80%, #64748B 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 40%, #cbd5e1 75%, #94a3b8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.text-neon-red {
-  color: #ff3366;
-  text-shadow: 0 0 20px rgba(255, 51, 102, 0.4);
-}
-
-.text-neon-blue {
-  color: #38bdf8;
-  text-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
-}
-
-.border-gold-glow {
-  border-color: rgba(245, 208, 97, 0.3);
-  box-shadow: 0 0 25px -5px rgba(245, 208, 97, 0.15), inset 0 0 15px -5px rgba(245, 208, 97, 0.1);
-}
-
-.border-silver-glow {
-  border-color: rgba(226, 232, 240, 0.25);
-  box-shadow: 0 0 25px -5px rgba(148, 163, 184, 0.15);
-}
-
-/* Glassmorphism */
-.glass-panel {
-  background: rgba(11, 17, 34, 0.7);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+/* Subtle architectural hairline borders */
+.border-hairline {
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.glass-panel-elevated {
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(245, 208, 97, 0.2);
-  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.7);
+.border-gold-subtle {
+  border: 1px solid rgba(197, 160, 89, 0.25);
 }
 
-/* Shimmer metallic shine animation */
-@keyframes metallicShine {
+.border-silver-subtle {
+  border: 1px solid rgba(226, 232, 240, 0.18);
+}
+
+/* Editorial Glassmorphism with deep obsidian tones */
+.glass-panel {
+  background: rgba(10, 13, 20, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.glass-panel-elevated {
+  background: rgba(12, 16, 24, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(223, 186, 115, 0.22);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+}
+
+/* Modal and Toast Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slideDown {
+  animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Metallic shimmer highlight for primary CTAs */
+@keyframes metallicShimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
 
 .animate-shimmer {
   background-size: 200% auto;
-  animation: metallicShine 4s linear infinite;
+  animation: metallicShimmer 6s ease infinite;
 }
 
-/* Custom scrollbar */
+/* Refined minimalist scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #060a17;
+  background: #07090e;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 4px;
-  border: 1px solid rgba(245, 208, 97, 0.2);
+  background: #19202f;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #252f44;
+}
+
+/* Hide scrollbar utility for filter bars and carousels */
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.no-scrollbar,
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
